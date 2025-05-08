@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"websocket/db"
 	"websocket/http"
@@ -46,7 +47,7 @@ func (sh *SendHandler) HandleRequest(ctx context.Context, event Event) (events.A
 		return http.Create500response()
 	}
 
-	endpoint := "https://mp7vbohqhc.execute-api.ap-northeast-1.amazonaws.com/production"
+	endpoint := os.Getenv("APIGATEWAY_WEBSOCKET_ENDPOINT")
 	for _, connectionID := range connectionIDs {
 		err = sh.sendMessage(ctx, endpoint, connectionID, event.JsonString)
 	}
