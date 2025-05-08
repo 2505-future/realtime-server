@@ -12,6 +12,7 @@ import (
 type IDynamoDB interface {
 	Put(connectionID string, roomID string) error
 	Delete(connectionID string) error
+	GetConnectionIDs(roomID string, connectionIDs *[]string) error
 }
 
 type DynamoDB struct {
@@ -50,5 +51,27 @@ func (d *DynamoDB) Delete(connectionID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete item: %w", err)
 	}
+	return nil
+}
+
+func (d *DynamoDB) GetConnectionIDs(roomID string, connectionIDs *[]string) error {
+	output, err := d.client.Query(context.TODO(), &dynamodb.QueryInput{
+		TableName:              aws.String(d.tableName),
+		IndexName:              aws.String("roomId-index"),
+		KeyConditionExpression: aws.String("roomId = :roomId"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":roomId": &types.AttributeValueMemberS{Value: roomID},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to query by roomId: %w", err)
+	}
+
+	for _, item := range output.Items {
+		if val, ok := item["connectionId"].(*types.AttributeValueMemberS); ok {
+			*connectionIDs = append(*connectionIDs, val.Value)
+		}
+	}
+
 	return nil
 }
