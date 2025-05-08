@@ -10,7 +10,7 @@ import (
 )
 
 type IDynamoDB interface {
-	Put(connectionID string) error
+	Put(connectionID string, roomID string) error
 	Delete(connectionID string) error
 }
 
@@ -26,11 +26,12 @@ func NewDynamoDB(client *dynamodb.Client, tableName string) *DynamoDB {
 	}
 }
 
-func (d *DynamoDB) Put(connectionID string) error {
+func (d *DynamoDB) Put(connectionID string, roomID string) error {
 	_, err := d.client.PutItem(context.TODO(), &dynamodb.PutItemInput{
 		TableName: aws.String(d.tableName),
 		Item: map[string]types.AttributeValue{
 			"connectionId": &types.AttributeValueMemberS{Value: connectionID},
+			"roomId":       &types.AttributeValueMemberS{Value: roomID},
 		},
 	})
 	if err != nil {

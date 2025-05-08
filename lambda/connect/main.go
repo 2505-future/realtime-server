@@ -26,10 +26,15 @@ func (ch *ConnectHandler) HandleRequest(request events.APIGatewayWebsocketProxyR
 	log.Println("start connect")
 
 	connectionID := request.RequestContext.ConnectionID
+	roomID := request.QueryStringParameters["roomID"]
+	if roomID == "" {
+		log.Println("roomID is empty")
+		return http.Create400response("roomID is empty")
+	}
 
 	log.Printf("connectionId : %s ¥n", connectionID)
 
-	err := ch.dynamodb.Put(connectionID)
+	err := ch.dynamodb.Put(connectionID, roomID)
 	if err != nil {
 		fmt.Println(err)
 		return http.Create500response()
