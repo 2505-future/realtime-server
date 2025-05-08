@@ -31,6 +31,8 @@ type Event struct {
 	JsonString string `json:"json"`
 }
 
+var endpoint = os.Getenv("APIGATEWAY_WEBSOCKET_ENDPOINT")
+
 func (sh *SendHandler) HandleRequest(ctx context.Context, event Event) (events.APIGatewayProxyResponse, error) {
 	log.Println("start send message")
 
@@ -47,7 +49,6 @@ func (sh *SendHandler) HandleRequest(ctx context.Context, event Event) (events.A
 		return http.Create500response()
 	}
 
-	endpoint := os.Getenv("APIGATEWAY_WEBSOCKET_ENDPOINT")
 	for _, connectionID := range connectionIDs {
 		err = sh.sendMessage(ctx, endpoint, connectionID, event.JsonString)
 	}
