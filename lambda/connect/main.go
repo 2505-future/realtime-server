@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"log"
 
-	"websocket/db"
 	"websocket/http"
 	"websocket/infrustructure"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
 )
 
 type ConnectHandler struct {
@@ -26,15 +24,17 @@ func (ch *ConnectHandler) HandleRequest(request events.APIGatewayWebsocketProxyR
 	log.Println("start connect")
 
 	connectionID := request.RequestContext.ConnectionID
-	roomID := request.QueryStringParameters["roomID"]
-	if roomID == "" {
-		log.Println("roomID is empty")
-		return http.Create400response("roomID is empty")
+	params := request.QueryStringParameters
+
+	requiredKeys := []string{"roomID", "power", "weight", "volume", "cd", "userID", "iconUrl"}
+	for _, key := range requiredKeys {
+		if params[key] == "" {
+			return http.Create400response(fmt.Sprintf("%s is empty", key))
+		}
 	}
 
-	log.Printf("connectionId : %s ¥n", connectionID)
-
-	err := ch.dynamodb.Put(connectionID, roomID)
+	// 必要であればこれらの値を DynamoDB に保存
+	err := ch.dynamodb.Put(connectionID, params["roomID"], params["userID"], params["iconUrl"], params["power"], params["weight"], params["volume"], params["cd"])
 	if err != nil {
 		fmt.Println(err)
 		return http.Create500response()
@@ -42,11 +42,4 @@ func (ch *ConnectHandler) HandleRequest(request events.APIGatewayWebsocketProxyR
 
 	fmt.Println("end connect")
 	return http.Create200response()
-}
-
-func main() {
-	client := db.NewDynamoDBClient()
-	dynamodb := infrustructure.NewDynamoDB(client, "websocket")
-	handler := NewConnectHandler(dynamodb)
-	lambda.Start(handler.HandleRequest)
 }
