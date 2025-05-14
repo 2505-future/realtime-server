@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"log"
 
+	"websocket/db"
 	"websocket/http"
 	"websocket/infrustructure"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 )
 
 type ConnectHandler struct {
@@ -33,7 +35,6 @@ func (ch *ConnectHandler) HandleRequest(request events.APIGatewayWebsocketProxyR
 		}
 	}
 
-	// 必要であればこれらの値を DynamoDB に保存
 	err := ch.dynamodb.Put(connectionID, params["roomID"], params["userID"], params["iconUrl"], params["power"], params["weight"], params["volume"], params["cd"])
 	if err != nil {
 		fmt.Println(err)
@@ -42,4 +43,11 @@ func (ch *ConnectHandler) HandleRequest(request events.APIGatewayWebsocketProxyR
 
 	fmt.Println("end connect")
 	return http.Create200response()
+}
+
+func main() {
+	client := db.NewDynamoDBClient()
+	dynamodb := infrustructure.NewDynamoDB(client, "websocket")
+	handler := NewConnectHandler(dynamodb)
+	lambda.Start(handler.HandleRequest)
 }
