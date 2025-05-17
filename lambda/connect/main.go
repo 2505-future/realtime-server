@@ -33,7 +33,7 @@ func (ch *ConnectHandler) HandleRequest(ctx context.Context, request events.APIG
 	connectionID := request.RequestContext.ConnectionID
 	params := request.QueryStringParameters
 
-	requiredKeys := []string{"roomID", "power", "weight", "volume", "cd", "userID", "iconUrl"}
+	requiredKeys := []string{"roomID", "power", "weight", "volume", "cd", "userID", "iconUrl", "x", "y"}
 	for _, key := range requiredKeys {
 		if params[key] == "" {
 			return http.Create400response(fmt.Sprintf("%s is empty", key))
@@ -57,6 +57,14 @@ func (ch *ConnectHandler) HandleRequest(ctx context.Context, request events.APIG
 	if err != nil {
 		return http.Create400response("invalid cd")
 	}
+	x, err := strconv.Atoi(params["x"])
+	if err != nil {
+		return http.Create400response("invalid x")
+	}
+	y, err := strconv.Atoi(params["y"])
+	if err != nil {
+		return http.Create400response("invalid y")
+	}
 
 	// JSON ペイロード構築
 	payload := map[string]interface{}{
@@ -68,6 +76,7 @@ func (ch *ConnectHandler) HandleRequest(ctx context.Context, request events.APIG
 			"weight":   weight,
 			"cd":       cd,
 			"volume":   volume,
+			"point":    []int{x, y},
 		},
 	}
 	jsonBytes, err := json.Marshal(payload)
@@ -87,7 +96,7 @@ func (ch *ConnectHandler) HandleRequest(ctx context.Context, request events.APIG
 		}
 	}
 
-	err = ch.dynamodb.Put(connectionID, params["roomID"], params["userID"], params["iconUrl"], params["power"], params["weight"], params["volume"], params["cd"])
+	err = ch.dynamodb.Put(connectionID, params["roomID"], params["userID"], params["iconUrl"], params["power"], params["weight"], params["volume"], params["cd"], params["x"], params["y"])
 	if err != nil {
 		fmt.Println(err)
 		return http.Create500response()
